@@ -3,6 +3,8 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 from transliterate import translit
 
 from constants import site_ids
+from xml.dom import minidom
+from xml.parsers.expat import ExpatError
 
 
 class Comment:
@@ -19,7 +21,7 @@ class Comment:
         """
         self.id = comment_id
         self.parent_id = parent_comment_id
-        self.text = text
+        self.text = text.replace("\n", " ").strip()
         self.text_transliterated = translit(self.text, 'sr', reversed=True)
 
 
@@ -99,17 +101,17 @@ class Article(ShortArticle):
         super().__init__(short_article.keyword, short_article.url, short_article.title, short_article.time,
                          short_article.site_name, short_article.id)
         # si-01-123.xml
-        self.document_name = "%s.xml" % short_article.site_id
+        self.document_name = "%s.xml" % short_article._article_id
         # Website ID: si-01
         self.source_id = short_article.site_id
         # Website name
         self.source_name = short_article.site_name
-        # Article ID: si-01-123
-        self.local_id = short_article.id
+        # Article ID: 123
+        self.local_id = short_article.id.split("%s-" % short_article.site_id)[-1]
         # Transliterated article title
         self.title_transliterated = short_article.tittle_transliterated
         # Article text
-        self.text = text.strip()
+        self.text = text.replace("\n", " ").strip()
         # Article author
         self.author = translit(author.strip(), 'sr', reversed=True)
         # Article text transliterated
@@ -122,7 +124,7 @@ class Article(ShortArticle):
         Convert article to XML.
         :return:
         """
-        document = Element('document', attrib={'global-id': self.local_id})
+        document = Element('document', attrib={'global-id': self.document_name.split(".")[0]})
         # Url
         url = SubElement(document, 'url')
         url.text = self._url
@@ -145,7 +147,7 @@ class Article(ShortArticle):
         article_title_transliterated = SubElement(article, 'article-title-transliterated')
         article_title_transliterated.text = self.title_transliterated
         # Article time
-        article_time = SubElement(article, 'article_time')
+        article_time = SubElement(article, 'article-time')
         article_time.text = self._time
         # Article author
         article_author = SubElement(article, 'article-author')
@@ -177,7 +179,13 @@ class Article(ShortArticle):
             comment_text_transliterated = SubElement(comment, 'comment-text-transliterated')
             comment_text_transliterated.text = c.text_transliterated
 
-        return tostring(document, encoding='utf-8', method='xml')
+        string_xml = tostring(document, encoding='utf-8', method='xml')
+        try:
+            reparsed = minidom.parseString(string_xml)
+            return reparsed.toprettyxml(encoding='utf-8')
+        except ExpatError:
+            print("Can't format XML")
+            return string_xml
 
     def save_to_file(self, file_name):
         """

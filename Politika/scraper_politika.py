@@ -87,7 +87,9 @@ class ScraperPolitika(Scraper):
             else:
                 comments = []
                 logging.warning("Foreign ID is None.")
-
+            total_comments = int(soup.find('a', class_='px1 light-blue').text)
+            if total_comments != len(comments) and len(comments) > 0:
+                logging.warning("Scraped wrong number of comments")
             full_article = Article(short_article, text, author, comments)
             return full_article
         except AttributeError:
@@ -103,24 +105,54 @@ class ScraperPolitika(Scraper):
             response = requests.get(self._comments_url.format(foreign_id, comments_page_counter))
             if response.status_code == 404:
                 return comments
-            json_comments_list = json.loads(response.content)['data']
-            for json_comment in json_comments_list:
+            json_top_comments_list = json.loads(response.content)['data']
+            for json_top_comment in json_top_comments_list:
                 comments_counter += 1
                 sub_comments_counter = 0
-                comment = json_comment['Comment']
+                top_comment = json_top_comment['Comment']
+                top_comment_original_id = top_comment['id']
 
-                text = comment['text']
-                comment_id = str(comments_counter)
-                parent_id = comment['parent_id']
-                comments.append(Comment(comment_id, parent_id, text))
-                if 'SubComment' not in json_comment:
+                top_text = top_comment['text']
+                top_comment_id = str(comments_counter)
+                parent_id = top_comment['parent_id']
+                comments.append(Comment(top_comment_id, parent_id, top_text))
+                if 'SubComment' not in json_top_comment:
                     continue
                 else:
-                    json_sub_comments = json_comment['SubComment']
-
+                    json_sub_comments = json_top_comment['SubComment']
+                sub_comment_ids = []
                 for json_sub_comment in json_sub_comments:
+                    sub_comment_ids.append(json_sub_comment['id'])
                     sub_comments_counter += 1
                     sub_text = json_sub_comment['text']
-                    sub_id = "%s-%d" % (comment_id, sub_comments_counter)
-                    sub_parent_id = comment_id
+                    sub_id = "%s-%d" % (top_comment_id, sub_comments_counter)
+                    sub_parent_id = top_comment_id
                     comments.append(Comment(sub_id, sub_parent_id, sub_text))
+                comments.extend(
+                    self._get_sub_comments(foreign_id, top_comment_original_id, sub_comment_ids, top_comment_id))
+
+    def _get_sub_comments(self, foreign_id, parent_id, sub_comment_ids, parent_local_id):
+        comments = []
+        if len(sub_comment_ids) == 0:
+            return comments
+        page = 1
+        while True:
+            sub_comments_url = 'http://www.politika.rs/api/v1/getComments/{}?page={}&parent_id={}&ids={}'.format(
+                foreign_id, page, parent_id, ",".join(sub_comment_ids))
+            sub_comments_response = requests.get(sub_comments_url).content.decode('utf-8-sig')
+            try:
+                sub_comments_json = json.loads(sub_comments_response)
+            except json.JSONDecodeError:
+                break
+            if 'data' not in sub_comments_response or len(sub_comments_json['data']) == 0:
+                break
+            sub_comments_counter = len(sub_comment_ids) + 1
+            for sub_comment in sub_comments_json['data']:
+                sub_text = sub_comment['Comment']['text']
+                sub_id = "%s-%d" % (parent_local_id, sub_comments_counter)
+                comments.append(Comment(sub_id, parent_local_id, sub_text))
+                sub_comments_counter += 1
+
+            page += 1
+
+        return comments

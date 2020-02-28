@@ -67,7 +67,7 @@ class ScraperVecer(Scraper):
         assert len(article_titles_divs) == len(article_date_divs)
         for title_div, date_div in zip(article_titles_divs, article_date_divs):
             article_title = title_div.text
-            article_url = "https://www.vecer.com/%s" % date_div.parent.parent.find_all('a')[0]['href']
+            article_url = "https://www.vecer.com%s" % date_div.parent.parent.find_all('a')[0]['href']
 
             date = datetime.strptime(date_div.text, '%d.%m.%Y, %H.%M')
 
