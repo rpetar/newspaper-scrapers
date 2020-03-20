@@ -7,6 +7,7 @@ from datetime import datetime
 from math import ceil
 
 import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.wait import WebDriverWait
@@ -81,7 +82,10 @@ class ScraperUr24(Scraper):
         try:
             WebDriverWait(driver, 3).until(
                 lambda x: x.find_element_by_class_name('article__body'))
-            text = driver.find_element_by_class_name('article__body').text
+            html = driver.page_source
+            soup = BeautifulSoup(html, 'html.parser')
+            text = self.get_formatted_article(text=soup.find('div', class_='article__body'))
+            # text = driver.find_element_by_class_name('article__body').text
             author = driver.find_element_by_class_name('article__details-main').text
             article_id = driver.find_element_by_xpath('//meta[@name="onl:articleId"]').get_attribute('content')
             comments = self._get_comments(article_id)
@@ -108,16 +112,14 @@ class ScraperUr24(Scraper):
             total_comments = int(response['data']['comments']['total'])
 
             # If there is no comment return
-            if total_comments == 0:
+            if len(response['data']['comments']['comments']) == 0:
                 return comments
             # If first iteration comment_id = 1, otherwise last comment id increased by 1
             comment_id = 1 if len(comments) == 0 else int(comments[-1].id.split('-')[0]) + 1
             # Get comments
             comments.extend(self._load_comments(comments=response['data']['comments']['comments'],
                                                 comment_id=str(comment_id)))
-            # If last page, return
-            if page == ceil(total_comments / per_page):
-                return comments
+
             page += 1
 
     def _load_comments(self, comments, comments_list=None, comment_id="1", parent_comment_id=''):
@@ -154,3 +156,25 @@ class ScraperUr24(Scraper):
                                        comment_id=str(int(comment_id) + 1), parent_comment_id=c_parent_id)
         else:
             return comments_list
+
+    def format_text(self, text):
+        """
+        Format XML text.
+        :param text:
+        :return:
+        """
+        for tag in text.findAll('div', class_='ArticleImage-description'):
+            tag.decompose()
+        for tag in text.findAll('div', class_='videos'):
+            tag.decompose()
+        for tag in text.findAll('div', class_='label--ad-banner'):
+            tag.decompose()
+        for tag in text.findAll('div', class_='gallery'):
+            tag.decompose()
+        for tag in text.findAll('img'):
+            tag.decompose()
+
+        for tag in text.findAll('p'):
+            tag.string = "\n%s" % tag.text
+        cleared = super().format_text(text)
+        return cleared

@@ -3,6 +3,7 @@ Večer newspaper scraper.
 """
 
 import logging
+import time
 from datetime import datetime
 
 import requests
@@ -79,10 +80,21 @@ class ScraperVecer(Scraper):
     def _get_full_article(self, short_article):
         url = short_article.url
         response = requests.get(url)
+
+        while response.status_code == 429:
+            time.sleep(5)
+            print('Retry')
+            response = requests.get(url)
+
         soup = BeautifulSoup(response.content, 'html.parser')
         try:
-            text = soup.find('div', class_='itemFullText').text
-            author = soup.find('div', class_='col-authorname').text
+            text = self.get_formatted_article(text=soup.find('div', class_='itemFullText'),
+                                              lead=soup.find('h2', class_='itemSubTitle'))
+            author = soup.find('div', class_='col-authorname')
+            if author is None:
+                author = ""
+            else:
+                author = author.text
             facebook_id = soup.find('meta', {'property': 'fb:app_id'})['content']
             domain = self._generic_url.split('https://')[1].split('/')[0]
 
@@ -94,3 +106,23 @@ class ScraperVecer(Scraper):
         except AttributeError:
             logging.error("Invalid URL: %s" % url)
         return None
+
+    def format_text(self, text):
+        """
+        Format XML text.
+        :param text:
+        :return:
+        """
+        gray_boxes = text.findAll('p', class_='GrayBox')
+        for gb in gray_boxes:
+            for br in gb.findAll('br'):
+                br.replace_with("\n")
+
+        for tag in text.findAll('span'):
+            if 'Potrebujete Javascript' in tag.text:
+                tag.decompose()
+
+        for tag in text.findAll('div', class_='ArticleImage-description'):
+            tag.decompose()
+        cleared = super().format_text(text)
+        return cleared

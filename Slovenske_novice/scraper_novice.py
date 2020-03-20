@@ -53,6 +53,7 @@ class ScraperNovice(Scraper):
 
     def _get_articles_list(self, keyword, page_num, **kwargs):
         url = self._generic_url.format(keyword, kwargs['year'], page_num)
+
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
         articles = []
@@ -77,12 +78,22 @@ class ScraperNovice(Scraper):
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
         try:
-            text = soup.find('div', class_='itemFullText').text
-            author = soup.find('span', class_='itemAuthor').text.split('Piše:')[-1].strip()
-            facebook_id = soup.find('meta', {'property': 'fb:app_id'})['content']
-            domain = self._generic_url.split('https://')[1].split('/')[0]
+            text = self.get_formatted_article(text=soup.find('div', class_='itemFullText'),
+                                              lead=soup.find('h2', class_='itemSubtitle'))
+            author = soup.find('span', class_='itemAuthor')
+            if author is None:
+                author = ""
+            else:
+                author = author.text.split('Piše:')[-1].strip()
 
-            comments = self._get_facebook_comments(url=url, facebook_id=facebook_id, domain=domain)
+            facebook_id = soup.find('meta', {'property': 'fb:app_id'})
+            if facebook_id is not None:
+                facebook_id = facebook_id['content']
+                domain = self._generic_url.split('https://')[1].split('/')[0]
+                comments = self._get_facebook_comments(url=url, facebook_id=facebook_id, domain=domain)
+            else:
+                comments = []
+
             if len(comments) > 0:
                 logging.info('Total comments: %d' % len(comments))
             full_article = Article(short_article, text, author, comments)
@@ -90,3 +101,23 @@ class ScraperNovice(Scraper):
         except AttributeError:
             logging.error("Invalid URL: %s" % url)
         return None
+
+    def format_text(self, text):
+        """
+        Format XML text.
+        :param text:
+        :return:
+        """
+        for tag in text.findAll('div', class_='ArticleImage-description'):
+            tag.decompose()
+        for tag in text.findAll('span'):
+            if 'Potrebujete Javascript' in tag.text:
+                tag.decompose()
+        for tag in text.findAll('span', class_='itemImageDesc'):
+            tag.decompose()
+        for tag in text.findAll('ul'):
+            tag.decompose()
+        for tag in text.findAll('ol'):
+            tag.decompose()
+        cleared = super().format_text(text)
+        return cleared

@@ -64,6 +64,43 @@ class Scraper:
 
         self._get_full_articles()
 
+    def get_formatted_article(self, text, lead=None):
+        """
+        Format article text and lead.
+        :param text: BeautifulSoup article tag
+        :param lead: BeautifulSoup lead tag
+        :return:
+        """
+        text = self.format_text(text)
+        if lead is not None:
+            lead = self.format_text(lead)
+            if lead == "":
+                return text
+            if lead[-1] != ".":
+                text = "%s. %s" % (lead, text)
+            else:
+                text = "%s %s" % (lead, text)
+        return text
+
+    @staticmethod
+    def format_text(text):
+        """
+        Format XML text.
+        :param text:
+        :return:
+        """
+        for skip_tag in constants.skip_tags:
+            for tag in text.findAll(skip_tag):
+                tag.decompose()
+        for br in text.findAll('br'):
+            br.replace_with("\n")
+        for tag in text.findAll('p'):
+            tag.string = "\n%s" % tag.text
+        cleared = text.text
+        cleared = re.sub(r'\n{2,}', r'\n\n', cleared)
+        cleared = cleared.strip()
+        return cleared
+
     def _get_short_articles(self, lang):
         """
         Return list of articles (ListArticle objects) within defined range.
@@ -118,6 +155,8 @@ class Scraper:
         folder = '%s/data/articles/' % self._site_name
         for a in self._articles:
             counter += 1
+            # if counter < 4160:
+            #     continue
             logging.info("%d. Get article: %s" % (counter, a.url))
             article = self._get_full_article(a)
             if article is not None:

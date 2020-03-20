@@ -1,10 +1,10 @@
+import re
 from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.sax.saxutils import unescape
 
 from transliterate import translit
 
 from constants import site_ids
-from xml.dom import minidom
-from xml.parsers.expat import ExpatError
 
 
 class Comment:
@@ -21,8 +21,28 @@ class Comment:
         """
         self.id = comment_id
         self.parent_id = parent_comment_id
-        self.text = text.replace("\n", " ").strip()
+        self.text = self._format_comment(text)
         self.text_transliterated = translit(self.text, 'sr', reversed=True)
+
+    def _format_comment(self, text):
+        """
+        Remove new lines from comment.
+        :param text:
+        :return:
+        """
+        text = text.replace('\r', '')
+        text = re.sub("\n*", "", text)
+
+        html_escape_table = {
+            "&amp;": "&",
+            "&quot;": '"',
+            "&apos;": "'",
+            "&gt;": ">",
+            "&lt;": "<",
+        }
+        for k, v in html_escape_table.items():
+            text = text.replace(k, v)
+        return text
 
 
 class ShortArticle:
@@ -111,7 +131,7 @@ class Article(ShortArticle):
         # Transliterated article title
         self.title_transliterated = short_article.tittle_transliterated
         # Article text
-        self.text = text.replace("\n", " ").strip()
+        self.text = text
         # Article author
         self.author = translit(author.strip(), 'sr', reversed=True)
         # Article text transliterated
@@ -165,7 +185,7 @@ class Article(ShortArticle):
         comments_count = SubElement(comments, 'comments-count')
         comments_count.text = str(len(self.comments))
         # Comments list
-        comments_list = SubElement(comments, 'comments-list')
+        comments_list = SubElement(comments, 'comment-list')
         for c in self.comments:
             # Comment
             comment = SubElement(comments_list, 'comment', attrib={'comment-id': c.id})
@@ -179,13 +199,8 @@ class Article(ShortArticle):
             comment_text_transliterated = SubElement(comment, 'comment-text-transliterated')
             comment_text_transliterated.text = c.text_transliterated
 
-        string_xml = tostring(document, encoding='utf-8', method='xml')
-        try:
-            reparsed = minidom.parseString(string_xml)
-            return reparsed.toprettyxml(encoding='utf-8')
-        except ExpatError:
-            print("Can't format XML")
-            return string_xml
+        xml_string = tostring(document, encoding='utf-8', method='xml')
+        return unescape(xml_string.decode('utf-8'))
 
     def save_to_file(self, file_name):
         """
@@ -193,7 +208,7 @@ class Article(ShortArticle):
         :return:
         """
         xml = self.convert_to_xml()
-        with open(file_name, 'wb') as f:
+        with open(file_name, 'w', encoding='utf-8') as f:
             f.write(xml)
 
 

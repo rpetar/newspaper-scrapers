@@ -75,8 +75,8 @@ class ScraperPolitika(Scraper):
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
         try:
-            text = soup.find('div', class_='article-content mt3 mb3').text
-
+            text = self.get_formatted_article(text=soup.find('div', class_='article-content mt3 mb3'),
+                                              lead=soup.find('div', class_='h4 mt0 mb2 regular roboto-slab'))
             author_tag = soup.find('meta', attrs={'name': 'author'})
             author = author_tag['content'] if 'content' in author_tag.attrs else ""
 
@@ -93,6 +93,8 @@ class ScraperPolitika(Scraper):
             full_article = Article(short_article, text, author, comments)
             return full_article
         except AttributeError:
+            with open(r'log/politika_errors.txt', 'a') as f:
+                f.write("%s\n" % url)
             logging.error("Invalid URL: %s" % url)
         return None
 
@@ -156,3 +158,43 @@ class ScraperPolitika(Scraper):
             page += 1
 
         return comments
+
+    def format_text(self, text):
+        """
+        Format XML text.
+        :param text:
+        :return:
+        """
+        for tag in text.findAll('div', class_='caption-title'):
+            tag.decompose()
+        for tag in text.findAll('div', class_='article-content mt3 mb3'):
+            tag.decompose()
+
+        for tag in text.findAll():
+            if tag.name == 'img':
+                if tag.next.next.name == 'i':
+                    tag.next.next.decompose()
+                    tag.next.decompose()
+                    tag.decompose()
+
+                if tag.next.next.next.name == 'i':
+                    tag.next.next.next.decompose()
+                    tag.next.next.decompose()
+
+                if tag.next.next.next.name == 'em':
+                    tag.next.next.next.decompose()
+                    tag.next.next.decompose()
+
+                if tag.next.next.next.next.name == 'i':
+                    tag.next.next.next.next.decompose()
+                    tag.next.next.next.decompose()
+        cleared = super().format_text(text)
+
+        # for skip_tag in constants.skip_tags:
+        #     for tag in text.findAll(skip_tag):
+        #         tag.decompose()
+        # cleared = text.text
+        # cleared = cleared.replace('&quot;', '"')
+        # cleared = cleared.replace('&amp;', '&')
+        # cleared = cleared.strip()  # .replace("\n", " ")
+        return cleared

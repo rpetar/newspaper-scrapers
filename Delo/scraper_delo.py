@@ -75,8 +75,13 @@ class ScraperDelo(Scraper):
         try:
             response = requests.get(url)
             soup = BeautifulSoup(response.content, 'html.parser')
-            text = soup.find('div', class_='itemFullText').text
-            author = soup.find('div', class_='col-authorname').text
+            text = self.get_formatted_article(text=soup.find('div', class_='itemFullText'),
+                                              lead=soup.find('h2', class_='itemSubtitle'))
+            author = soup.find('div', class_='col-authorname')
+            if author is None:
+                author = ""
+            else:
+                author = author.text
             facebook_id = soup.find('meta', {'property': 'fb:app_id'})['content']
             domain = self._generic_url.split('https://')[1].split('/')[0]
 
@@ -88,3 +93,46 @@ class ScraperDelo(Scraper):
         except (AttributeError, requests.exceptions.ConnectionError):
             logging.error("Invalid URL: %s" % url)
         return None
+
+    def format_text(self, text):
+        """
+        Format XML text.
+        :param text:
+        :return:
+        """
+        for tag in text.findAll('img'):
+            if tag.next.next.name == 'p':
+                if 'Foto' in tag.next.next.text:
+                    tag.next.next.decompose()
+                    tag.next.decompose()
+                    tag.decompose()
+            if tag.next.next.name == 'i':
+                tag.next.next.decompose()
+                tag.next.decompose()
+                tag.decompose()
+
+            if tag.next.next.next.name == 'i':
+                if 'Foto' in tag.next.next.next.text:
+                    tag.next.next.next.decompose()
+                    tag.next.next.decompose()
+                    tag.next.decompose()
+                    tag.decompose()
+            if tag.next is not None and 'Foto' in tag.next:
+                tag.decompose()
+
+        for tag in text.findAll('p', class_='d_author'):
+            tag.decompose()
+        for tag in text.findAll('span', class_='ArticleImage-source'):
+            tag.decompose()
+        for tag in text.findAll('div', class_='ArticleImage-foto'):
+            tag.decompose()
+        for tag in text.findAll('div', class_='itemImageDesc'):
+            tag.decompose()
+        for tag in text.findAll('div', class_='itemInfoboxText'):
+            tag.decompose()
+        for tag in text.findAll('img'):
+            if tag.next.next.name == 'p':
+                if 'Foto' in tag.next.next.text:
+                    tag.decompose()
+        cleared = super().format_text(text)
+        return cleared

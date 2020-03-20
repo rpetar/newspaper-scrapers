@@ -63,9 +63,24 @@ class ScraperDnevnik(Scraper):
         url = short_article.url
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
+
+        if "article-lock" in response.content.decode('utf-8'):
+            logging.error("Pay-wall: %s" % url)
+            return None
+
         try:
-            text = soup.find('div', class_='article-body article-wrap').find('article').text
-            author = soup.find('div', class_='article-source').text
+            article_text = soup.find('div', class_='article-body article-wrap')
+            if article_text.find('article') is not None:
+                article_text = article_text.find('article')
+            text = self.get_formatted_article(
+                text=article_text,
+                lead=soup.find('p', class_='lead'))
+            author = soup.find('div', class_='article-source')
+            if author is None:
+                author = ""
+            else:
+                author = author.text
+
             comments = self._get_comments()
             full_article = Article(short_article, text, author, comments)
             return full_article
@@ -75,3 +90,28 @@ class ScraperDnevnik(Scraper):
 
     def _get_comments(self):
         return []
+
+    def format_text(self, text):
+        """
+        Format XML text.
+        :param text:
+        :return:
+        """
+
+        for tag in text.findAll('div', class_='gallery-slider'):
+            tag.decompose()
+        for tag in text.findAll('p', class_='image-caption'):
+            tag.decompose()
+        for tag in text.findAll('blockquote', class_='twitter-tweet'):
+            tag.decompose()
+        for tag in text.findAll('img'):
+            if tag.next.text is not None and 'Foto' in tag.next.text:
+                tag.next.decompose()
+            if tag.next.next.text is not None and 'Foto' in tag.next.next.text:
+                tag.next.next.decompose()
+            if tag.next.next.next.text is not None and 'Foto' in tag.next.next.next.text:
+                tag.next.next.next.decompose()
+            tag.decompose()
+
+        cleared = super().format_text(text)
+        return cleared

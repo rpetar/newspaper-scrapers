@@ -50,3 +50,5 @@ site_comments = {
     'Svet24': FACEBOOK_COMMENTS_URL,
     'ur24': 'https://gql.24ur.si/graphql/'
 }
+
+skip_tags = ['style', 'iframe', 'javascript', 'css', 'embed-container', 'figcaption', 'script','img']

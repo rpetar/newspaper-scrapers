@@ -47,7 +47,7 @@ class ScraperSvet24(Scraper):
             # Get article date
             article_date = date_div.text.strip().split('\n')[-1].strip()
             # Get article url
-            article_url = "https://novice.svet24.si/{}".format(url_title_div['href'])
+            article_url = "https://novice.svet24.si{}".format(url_title_div['href'])
             # Get article title
             article_title = url_title_div.find('h4').text.strip()
 
@@ -66,8 +66,15 @@ class ScraperSvet24(Scraper):
         soup = BeautifulSoup(response.content, 'html.parser')
 
         try:
-            text = soup.find('div', class_='article-text article-video-scroll clearfix').text.strip()
-            author = soup.find('span', class_='inline-flex items-center').text.strip()
+            text = self.get_formatted_article(
+                text=soup.find('div', class_='article-text article-video-scroll clearfix'),
+                lead=soup.find('p', {'itemprop': 'description'}))
+            author = soup.find('span', class_='inline-flex items-center')
+            if author is None:
+                author = ""
+            else:
+                author = author.text.strip()
+
             facebook_id = soup.find('meta', {'property': 'fb:app_id'})['content']
             domain = self._generic_url.split('https://')[1].split('/')[0]
 
@@ -78,3 +85,16 @@ class ScraperSvet24(Scraper):
         except AttributeError:
             logging.error("Invalid URL: %s" % url)
         return None
+
+    def format_text(self, text):
+        """
+        Format XML text.
+        :param text:
+        :return:
+        """
+        for tag in text.findAll('div', class_='article-img-desc'):
+            tag.decompose()
+        for tag in text.findAll('div', class_='author'):
+            tag.decompose()
+        cleared = super().format_text(text)
+        return cleared

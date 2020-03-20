@@ -209,3 +209,5 @@ fabric.properties
 
 **/*.log
 **/*.xml
+
+time.md
