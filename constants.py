@@ -15,16 +15,25 @@ MAX_DATE = datetime.strptime("01.01.2020", '%d.%m.%Y')
 
 site_ids = {
     "Politika": "sr-01",
+    "Kurir": "sr-03",
+    "Alo": "sr-04",
+    "Srbija_danas": "sr-05",
     "Delo": 'si-01',
     'Slovenske_novice': 'si-02',
     'Dnevnik': 'si-03',
     'Večer': 'si-04',
     'Svet24': 'si-05',
-    'ur24': 'si-06'
+    'ur24': 'si-06',
 }
 
 site_urls = {
     "Politika": "http://www.politika.rs/search/index/keyword:{}/sort:date/page:{}",
+    # page, keyword
+    "Kurir": "https://www.kurir.rs/pretraga/strana/{}?q={}",
+    # keyword, page
+    "Alo": "https://www.alo.rs/article/browse?context=1&q={}&currentPage={}",
+    # keyword, page
+    "Srbija_danas": "https://www.srbijadanas.com/search-results/{}?page={}",
     "Delo": 'https://www.delo.si//iskalnik?q={}&time_range={}&page={}',
     'Slovenske_novice': 'https://www.slovenskenovice.si/iskalnik?q={}&time_range={}&page={}',
     'Dnevnik': 'https://www.dnevnik.si/api/article?q={}&from={}&to={}&include_pr_articles=false&&lang=sl&offset={}'
@@ -43,6 +52,10 @@ FACEBOOK_COMMENTS_URL_API = 'https://graph.facebook.com/v6.0/{}/comments?' \
                             'pPs0TiaK5yQKgufKR47HmxSKYIfqfEgbiRYftMmb2x7wR'
 site_comments = {
     "Politika": "http://www.politika.rs/api/v1/getComments/{}?page={}",
+    # ID, page
+    "Kurir": "https://www.kurir.rs/ajax/comments/list?aid={}&table=kurir_article_comments&page={}",
+    "Alo": "",
+    "Srbija_danas": "",
     "Delo": FACEBOOK_COMMENTS_URL,
     'Slovenske_novice': FACEBOOK_COMMENTS_URL,
     'Dnevnik': '',
@@ -51,4 +64,4 @@ site_comments = {
     'ur24': 'https://gql.24ur.si/graphql/'
 }
 
-skip_tags = ['style', 'iframe', 'javascript', 'css', 'embed-container', 'figcaption', 'script','img']
+skip_tags = ['style', 'iframe', 'javascript', 'css', 'embed-container', 'figcaption', 'script', 'img', 'figure']

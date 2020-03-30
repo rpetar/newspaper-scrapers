@@ -97,7 +97,7 @@ class Scraper:
         for tag in text.findAll('p'):
             tag.string = "\n%s" % tag.text
         cleared = text.text
-        cleared = re.sub(r'\n{2,}', r'\n\n', cleared)
+        cleared = re.sub(r'\n{2,}', r'\n', cleared)
         cleared = cleared.strip()
         return cleared
 
@@ -118,6 +118,18 @@ class Scraper:
                 # Stop iteration if article is older than min date
                 if stop_iteration:
                     break
+
+    def extend_short_articles(self, path=r'C:\Users\rape9001\Downloads\naslovi.json', newspaper=""):
+        """
+        Load more URL-s from separate JSON file.
+        :param path: path of the JSON file
+        :param newspaper: name of the newspaper
+        :return:
+        """
+        with open(path, 'r') as file:
+            f = json.load(file)
+        newspapers = [(np['url'], np['keyword']) for np in f if np['source'] == newspaper]
+        return newspapers
 
     def _remove_duplicates(self):
         """
@@ -155,7 +167,7 @@ class Scraper:
         folder = '%s/data/articles/' % self._site_name
         for a in self._articles:
             counter += 1
-            # if counter < 4160:
+            # if counter < 6186:
             #     continue
             logging.info("%d. Get article: %s" % (counter, a.url))
             article = self._get_full_article(a)

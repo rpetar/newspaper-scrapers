@@ -3,6 +3,7 @@ Main method.
 """
 from Delo.scraper_delo import ScraperDelo
 from Dnevnik.scraper_dnevnik import ScraperDnevnik
+from Kurir.scraper_kurir import ScraperKurir
 from Politika.scraper_politika import ScraperPolitika
 from Slovenske_novice.scraper_novice import ScraperNovice
 from Svet24.scraper_svet24 import ScraperSvet24
@@ -28,6 +29,8 @@ if __name__ == "__main__":
     # scraper_24ur = ScraperUr24()
     # scraper_24ur.scrape()
 
-    #######
-    scraper_dnevnik = ScraperDnevnik()
-    scraper_dnevnik.scrape()
+    # scraper_dnevnik = ScraperDnevnik()
+    # scraper_dnevnik.scrape()
+
+    scraper_kurir = ScraperKurir()
+    scraper_kurir.scrape()

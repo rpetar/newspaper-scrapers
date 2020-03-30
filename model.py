@@ -78,9 +78,18 @@ class ShortArticle:
     def title(self):
         return self._title
 
+    @title.setter
+    def title(self, title):
+        self._title = title
+        self._title_transliterated = translit(self._title, 'sr', reversed=True)
+
     @property
     def time(self):
         return self._time
+
+    @time.setter
+    def time(self, time):
+        self._time = time
 
     @property
     def tittle_transliterated(self):
