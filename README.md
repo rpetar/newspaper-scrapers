@@ -1,9 +1,9 @@
 ### Description
 Scrapers for following newspapers:  
     1. [Politika](http://www.politika.rs) 
-    2. [Kurir](https://www.kurir.rs/)
-    3. [Srbija danas](https://www.srbijadanas.com/)
-    4. [Alo](http://alo.rs/)
+    2. [Kurir](https://www.kurir.rs/)  
+    3. [Srbija danas](https://www.srbijadanas.com/)  
+    4. [Alo](http://alo.rs/)  
     5. [Delo](https://www.delo.si/)  
     6. [Dnevnik](dnevnik.si)  
     7. [Slovenske novice](https://www.slovenskenovice.si/)  
