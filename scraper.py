@@ -76,10 +76,8 @@ class Scraper:
             lead = self.format_text(lead)
             if lead == "":
                 return text
-            if lead[-1] != ".":
-                text = "%s. %s" % (lead, text)
-            else:
-                text = "%s %s" % (lead, text)
+            point = "." if lead[-1] != "." else ""
+            text = "%s%s\n%s" % (lead, point, text)
         return text
 
     @staticmethod
@@ -111,6 +109,7 @@ class Scraper:
             logging.info("Keyword: %s" % keyword)
             number_of_pages = self._get_keyword_number_of_pages(keyword)
             logging.info("Number of pages: %s" % number_of_pages)
+            # TODO: change range to 1
             for page_num in range(1, number_of_pages + 1):
                 logging.info("%d" % page_num)
                 articles_list, stop_iteration = self._get_articles_list(keyword, page_num)
@@ -167,7 +166,7 @@ class Scraper:
         folder = '%s/data/articles/' % self._site_name
         for a in self._articles:
             counter += 1
-            # if counter < 6186:
+            # if counter < 1957:
             #     continue
             logging.info("%d. Get article: %s" % (counter, a.url))
             article = self._get_full_article(a)
@@ -178,6 +177,14 @@ class Scraper:
         shutil.move("%s.zip" % self._site_name, folder)
 
     def _get_facebook_comments_API(self, **kwargs):
+        """
+        Scrape all Facebook comments using Facebook API. This method has restricted number of comments that can be
+        scraper for free.
+        :param facebook_id: Facebook ID
+        :param domain: domain
+        :param url: url
+        :return:
+        """
         comments = []
         target_id = self._get_facebook_id(kwargs['facebook_id'], kwargs['domain'], kwargs['url'])
         top_comments_url = constants.FACEBOOK_COMMENTS_URL_API.format(target_id)
@@ -230,6 +237,13 @@ class Scraper:
         return target_fb_id
 
     def _get_facebook_comments(self, **kwargs):
+        """
+        Scrape all Facebook comments using Facebook comments URL.
+        :param facebook_id: Facebook ID
+        :param domain: domain
+        :param url: url
+        :return:
+        """
         comments = []
         fb_comments_response = requests.get(
             self._comments_url.format(kwargs['facebook_id'], kwargs['domain'], kwargs['url'])).content.decode('utf-8')

@@ -42,7 +42,7 @@ class Comment:
         }
         for k, v in html_escape_table.items():
             text = text.replace(k, v)
-        return text
+        return text.strip()
 
 
 class ShortArticle:

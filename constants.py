@@ -54,8 +54,9 @@ site_comments = {
     "Politika": "http://www.politika.rs/api/v1/getComments/{}?page={}",
     # ID, page
     "Kurir": "https://www.kurir.rs/ajax/comments/list?aid={}&table=kurir_article_comments&page={}",
-    "Alo": "",
-    "Srbija_danas": "",
+    # Article ID, last comment ID
+    "Alo": "https://www.alo.rs/comment/paginate?articleId={}&lastCommentId={}",
+    "Srbija_danas": "https://www.srbijadanas.com{}",
     "Delo": FACEBOOK_COMMENTS_URL,
     'Slovenske_novice': FACEBOOK_COMMENTS_URL,
     'Dnevnik': '',

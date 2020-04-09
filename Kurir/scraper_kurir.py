@@ -1,9 +1,10 @@
 """
 Kurir newspaper scraper.
 """
-
+import glob
 import logging
-import time
+import os
+import shutil
 from datetime import datetime, timedelta
 
 import requests
@@ -151,7 +152,7 @@ class ScraperKurir(Scraper):
         """
         for tag in text.findAll('div', class_='wdgRelated'):
             tag.decompose()
-        for tag in text.findAll('div', class_='articleImageCaption  '):
+        for tag in text.findAll('div', class_='articleImageCaption'):
             tag.decompose()
         for tag in text.findAll('div', class_='artSource'):
             tag.decompose()
@@ -182,3 +183,29 @@ class ScraperKurir(Scraper):
 
         cleared = super().format_text(text)
         return cleared
+
+    @staticmethod
+    def remove_thrash_articles():
+        """
+        Remove thrash articles.
+        :return:
+        """
+        cnt = 0
+        root_dir = r'Kurir\data\thrash'
+        thrash_articles = ['stars']
+        for thrash_article in thrash_articles:
+            folder_path = os.path.join(root_dir, 'articles_%s' % thrash_article)
+            os.makedirs(folder_path, exist_ok=True)
+            for path in glob.glob(os.path.join(r'Kurir\data\articles', '*.xml')):
+                with open(path, 'r', encoding='utf-8') as file:
+                    content = file.read()
+                if 'https://www.kurir.rs/%s' % thrash_article in content or \
+                        'http://www.kurir.rs/%s' % thrash_article in content:
+                    thrash_article_path = os.path.join(folder_path, os.path.basename(path))
+                    shutil.move(path, thrash_article_path)
+                    cnt += 1
+        logging.info("Total %d thrash articles removed." % cnt)
+
+
+if __name__ == '__main__':
+    ScraperKurir.remove_thrash_articles()
